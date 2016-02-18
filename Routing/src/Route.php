@@ -247,11 +247,10 @@ class Route {
 		if(!isset($this->attributes[$name]))
 			return false;
 		
-		if(null !== $value)
-			if($this->attributes[$name] === $value)
-				return true;
-		
-		return false;
+		if(null === $value || (null !== $value && $this->attributes[$name] === $value))
+			return true;
+		else
+			return false;
 	}
 
 	/**
