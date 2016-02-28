@@ -1,5 +1,7 @@
 <?php
 
+namespace A1;
+
 class Collection{
 
 	/**
@@ -55,7 +57,7 @@ class Collection{
 		$nargs = count($args);
 
 		if(0 === $nargs)
-			throw new InvalidArgumentException('At least one parameter is required');
+			throw new \InvalidArgumentException('At least one parameter is required');
 
 		$value = array_shift($args);
 		$path = array_reverse($args);
@@ -64,7 +66,7 @@ class Collection{
 
 		if(1 === $nargs){
 			if(!is_array($value) && !is_object($value))
-				throw new InvalidArgumentException('Single parameter must be an array as it replaces the collection fully');
+				throw new \InvalidArgumentException('Single parameter must be an array as it replaces the collection fully');
 			$this->collection = (array) $value;
 		}
 		else
@@ -152,7 +154,7 @@ class Collection{
 		$path = func_get_args();
 
 		if(0 === count($path))
-			throw new InvalidArgumentException('At least one argument is required');
+			throw new \InvalidArgumentException('At least one argument is required');
 
 		foreach ($path as $key) {
 			if(!empty($key) && (!is_array($offset) || !array_key_exists($key,$offset)))
@@ -179,7 +181,7 @@ class Collection{
 			return count($this->collection);
 		
 		if(!call_user_func_array(array($this,'has'), $args))
-			throw new DomainException(sprintf('Impossible count, at least one key is undefined'));
+			throw new \DomainException(sprintf('Impossible count, at least one key is undefined'));
 		
 		return count(call_user_func_array(array($this,'get'), $args));
 	}
@@ -202,7 +204,7 @@ class Collection{
 			$collection = (array) $collection;
 
 		if(!is_array($collection))
-			throw new InvalidArgumentException('$collection parameter must be a Collection instance, an object or an array');
+			throw new \InvalidArgumentException('$collection parameter must be a Collection instance, an object or an array');
 
 		if($recursive)
 			$this->collection = array_replace_recursive($this->collection, $collection);
