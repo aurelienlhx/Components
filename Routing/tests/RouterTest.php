@@ -1,7 +1,7 @@
 <?php
 
-use Routing\Route;
-use Routing\Router;
+use A1\Routing\Route;
+use A1\Routing\Router;
 
 class RouterTest extends PHPUnit_Framework_TestCase{
 
