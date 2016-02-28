@@ -1,6 +1,6 @@
 <?php
 
-namespace Uri;
+namespace A1\Uri;
 
 class Url{
 
@@ -138,7 +138,7 @@ class Url{
 	private static $host_regex = array(
 		//..ipv4..
 		'#(?Ji)^(?P<ip>(?:\d{1,3}\.){3}\d+)|',
-		//..ipv6.. (this ipv6 regex is not a totaly valid one but work enought here)
+		//..ipv6.. (this ipv6 regex is not a totally valid one but works enought here)
 		'(?:\[(?P<ip>(?:[0-9A-F]{0,4}:){1,7}(?:[0-9A-F]{1,4}){1})\])|',
 		//..domain..
 		'(?:(?P<domain>(?:(?P<subdomain>.*)\.)?(?P<sld>.*?)\.(?P<tld>[^:]+)))$#',
@@ -366,7 +366,7 @@ class Url{
 		if(0 === func_num_args())
 			return http_build_query($this->query); //create string from array
 		if(!is_string($query))
-			throw new InvalidArgumentException('$query must be a string');
+			throw new \InvalidArgumentException('$query must be a string');
 		parse_str($query,$query); //create array from string
 		$this->query = $query;
 	}
@@ -470,7 +470,7 @@ class Url{
 	 */
 	private static function parseUrl($url, &$parts){
 		if(!is_string($url))
-			throw new InvalidArgumentException('$url must be a string');
+			throw new \InvalidArgumentException('$url must be a string');
 
 		$url_regex = implode(self::$url_regex);
 		if(!preg_match($url_regex,$url,$matches))
@@ -488,7 +488,7 @@ class Url{
 	 */
 	private static function parseAuthority($authority, &$parts){
 		if(!is_string($authority))
-			throw new InvalidArgumentException('$authority must be a string');
+			throw new \InvalidArgumentException('$authority must be a string');
 		
 		$authority_regex = implode(self::$authority_regex);
 		if(!preg_match($authority_regex,$authority,$matches))
@@ -506,7 +506,7 @@ class Url{
 	 */
 	private static function parseHost($host, &$parts){
 		if(!is_string($host))
-			throw new InvalidArgumentException('$host must be a string');
+			throw new \InvalidArgumentException('$host must be a string');
 		
 		$host_regex = implode(self::$host_regex);
 		if(!preg_match($host_regex,$host,$matches))
