@@ -1,6 +1,6 @@
 <?php
 
-use Uri\Url;
+use A1\Uri\Url;
 
 class UrlTest extends PHPUnit_Framework_TestCase{
 
@@ -129,6 +129,20 @@ class UrlTest extends PHPUnit_Framework_TestCase{
 		//change path
 		$o_url->path('');
 		$this->assertEquals($o_url->stringify(),'http://subdomain.google.org?param1=value1&param2=value2#hash');
+	}
+
+	/**
+	 * 
+	 */
+	public function testException(){
+		$o_url = new Url();
+
+		$this->setExpectedException(\InvalidArgumentException::class);
+		$o_url->query([]);
+
+		$this->setExpectedException(\InvalidArgumentException::class);
+		Url::parse([]);
+
 	}
 
 }
