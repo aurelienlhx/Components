@@ -1,5 +1,7 @@
 <?php
 
+use A1\Collection;
+
 class CollectionTest extends PHPUnit_Framework_TestCase{
 
 	private $collection = [
