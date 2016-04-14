@@ -222,8 +222,31 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 		$inflate = $collection->get();
 
 		$this->assertEquals($inflate,$arr);
+	}
 
+	/**
+	 * 
+	 */
+	public function testPick(){
+		$arr = [
+			'foo' => 1,
+			'bar' => 2,
+			'baz' => 3,
+			'baa' => [
+				'bee' => [
+					'bii'=>':)'
+				]
+			]
+		];
 
+		$collection = new Collection($arr);
+
+		$this->assertEquals($collection->pick('faa','fall'),'fall');
+		$this->assertEquals($collection->pick('baa','bee','bii','fall'),':)');
+		$this->assertEquals($collection->pick('baa','bee','buu','fall'),'fall');
+	
+		$this->setExpectedException(\InvalidArgumentException::class);
+		$collection->pick('foo');
 	}
 
 
