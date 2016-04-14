@@ -2,12 +2,16 @@
 
 namespace A1;
 
-class Collection{
+use \ArrayAccess;
+
+class Collection implements ArrayAccess{
 
 	/**
+	 * Collection to handle
+	 * 
 	 * @var array
 	 */
-	protected $collection = array();
+	protected $collection =  [];
 
 	/**
 	 * @var bool
@@ -21,6 +25,35 @@ class Collection{
 	 */
 	public function __construct(array $collection = array()){
 		$this->set($collection);
+	}
+
+	/**
+	 * Implmentation of ArrayAccess interface
+	 */
+	public function offsetExists($offset){
+		return $this->has($offset);
+	}
+
+	
+	/**
+	 * 	Implmentation of ArrayAccess interface
+	 */
+	public function offsetGet($offset) {
+		return $this->get($offset);
+    }
+
+	/**
+	 * 	Implmentation of ArrayAccess interface
+	 */
+	public function offsetSet($offset, $value){
+		$this->set($offset, $value);
+	}
+
+	/**
+	 * 	Implmentation of ArrayAccess interface
+	 */
+	public function offsetUnset($offset){
+		$this->delete($offset);
 	}
 
 	/**
@@ -210,6 +243,158 @@ class Collection{
 			$this->collection = array_replace_recursive($this->collection, $collection);
 		else
 			$this->collection = array_replace($this->collection, $collection);
+	}
+
+	/**
+	 * Return the depth of the collection
+	 *
+	 * @return int
+	 */
+	public function depth(){
+		return $this->__depth($this->collection);
+	}
+
+	/**
+	 * Internal depth
+	 *
+	 * @param $array
+	 *
+	 * @return int;
+	 */
+	 function __depth(array $array){
+	    $max_depth = 0;
+
+	    foreach ($array as $value){
+			if (is_array($value)){
+				$depth = $this->__depth($value) + 1;
+
+			if ($depth > $max_depth)
+				$max_depth = $depth;
+			}
+	   }
+	   return $max_depth;
+	}
+
+	/**
+	 * Return the array source
+	 *
+	 * @return array
+	 */
+	public function arrayfy(){
+		return $this->collection;
+	}
+
+	/**
+	 * Flatten all the collection on one level
+	 *
+	 * @return string
+	 */
+	public function flatten($separator = '.'){
+		$flatten = $this->__flatten($this->collection,$separator);
+		$this->collection = $flatten;
+		return $this;
+	}
+
+	/**
+	 * Internal flatten
+	 *
+	 * @param array $array
+	 * @param string $separator
+	 * @param string $base
+	 *
+	 * @return array
+	 */
+	public function __flatten(array $array,$separator = '.',$base = ''){
+		$flattened = [];
+		
+		foreach($array as $key => $value){
+
+			if(!empty($base))
+				$key = $base.$separator.$key;
+
+			if(is_array($value)){
+				$tmp = $this->__flatten($value,$separator,$key);
+				$flattened = $flattened + $tmp; //keep numerics keys whereas merge not
+			}
+			else{
+				$flattened[$key] = $value;
+			}
+		}
+
+		return $flattened;
+	}
+
+	/**
+	 * Inflate an array
+	 *
+	 * @param array $array
+	 * @param string $separator
+	 *
+	 * @return array
+	 */
+	public function inflate($separator = '.'){
+		
+	    $inflate = array();
+	    foreach ($this->collection as $key => $val) 
+	    {
+	        $parts = explode($separator,$key);
+	        $leafpart = array_pop($parts);
+	        $parent = &$inflate;
+	        foreach ($parts as $part) 
+	        {
+	            if (!isset($parent[$part]))
+	                $parent[$part] = array();
+	            else if (!is_array($parent[$part]))
+	                $parent[$part] = array();
+		                
+	            $parent = &$parent[$part];
+	        }
+		
+	        if (empty($parent[$leafpart]))
+	            $parent[$leafpart] = $val;
+	    }
+
+	    $this->collection = $inflate;
+	    return $this;
+	}
+
+	/**
+	 * Stringify the array
+	 *
+	 * @return string
+	 */
+	public function stringify(){
+		return json_encode($this->__stringify($this->collection));
+	}
+
+	/**
+	 * Internal stringify
+	 *
+	 * @param array $array
+	 *
+	 * @return array
+	 */
+	private function __stringify(array $array){
+
+		foreach($array as $key => &$value){
+			
+			if(is_object($value)){
+				$value = get_object_vars($value);
+			}
+			else if(is_array($value))
+				$value = $this->__flatten($value);
+		}
+		return $array;
+	}
+
+	
+	/**
+	 * Make a collection echoable
+	 *
+	 * @return string
+	 */
+	public function __toString(){
+		return $this->stringify();
 	}
 
 }
