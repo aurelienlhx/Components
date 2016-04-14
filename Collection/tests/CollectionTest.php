@@ -20,6 +20,7 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 	public function testGet(){
 		$collection = new Collection($this->collection);
 
+		$this->assertEquals($collection->offsetGet('foo'),'bar');
 		$this->assertEquals($collection->get('foo'),'bar');
 		$this->assertEquals($collection->get('level1','level2','level3'),'value');
 		$this->assertEquals($collection->get('path','not','exists'), null);
@@ -30,6 +31,9 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 	 */
 	public function testSet(){
 		$collection = new Collection($this->collection);
+
+		$collection->offsetSet('init',true);
+		$this->assertEquals($collection->get('init'),true);
 
 		$collection->set('key1','key2','test');
 		$this->assertEquals($collection->get('key1','key2'),'test');
@@ -44,8 +48,8 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 	public function testDelete(){
 
 		$collection = new Collection($this->collection);
+		
 		$collection->delete('foo');
-
 		$this->assertEquals($collection->get(),[
 			'123' => 456,
 			'level1' => [
@@ -61,8 +65,14 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 			'level1' => []
 		]);
 
+		$collection->offsetUnset('123');
+		$this->assertEquals($collection->get(),[
+			'level1' => []
+		]);
+
 		$collection->delete();
 		$this->assertEquals($collection->get(),[]);
+
 	}
 
 	/**
@@ -71,6 +81,7 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 	public function testHas(){
 		$collection = new Collection($this->collection);
 
+		$this->assertEquals($collection->offsetExists('level1'),true);
 		$this->assertEquals($collection->has('level1','level2'),true);
 		$this->assertEquals($collection->has('do','not','exists'),false);
 
@@ -150,6 +161,69 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 		//invalid count
 		$this->setExpectedException(\DomainException::class);
 		$collection->count('invalid','key','path');
+	}
+
+	/**
+	 * 
+	 */
+	public function testCountDepth(){
+		$collection = new Collection($this->collection);
+		$this->assertEquals($collection->depth(),2);
+	}
+
+	/**
+	 * 
+	 */
+	// public function testStringify(){
+	// 	$test = new stdClass();
+	// 	$test->hello = 'salut';
+	// 	$test->bye = ['bye'];
+
+	// 	$collection = new Collection([
+	// 		'foo' => 'bar',
+	// 		0 => $test,
+	// 		'arr0' => ['arr1' => ['arr2']],
+	// 		'col'=> new Collection()
+	// 	]);
+	// 	// var_dump($collection->flatten());
+	// 	// var_dump((string) $collection);
+	// 	$this->assertEquals($collection->stringify(),'{"foo":"bar","0":{"hello":"salut","bye":["bye"]},"arr0":{"arr1":["arr2"]},"col":{"collection":[],"frozen":false}}');
+	// }
+
+	/**
+	 * 
+	 */
+	public function testFlat(){
+		$arr = [
+			'foo' => 'bar',
+			'123' => 456,
+			'level1' => [
+				'level20' => 'test',
+				'level21' => [
+					'level3' => 'value'
+				]
+			],
+			456 => 'test'
+		];
+
+		$collection = new Collection($arr);
+
+		$collection->flatten();
+
+		$this->assertEquals($collection->get(),[
+			'foo'=>'bar',
+			'123'=>456,
+			'level1.level20' => 'test',
+			'level1.level21.level3' => 'value',
+			456 => 'test'
+		]);
+
+		$collection->inflate();
+		$inflate = $collection->get();
+
+		$this->assertEquals($inflate,$arr);
+
+
 	}
 
 
