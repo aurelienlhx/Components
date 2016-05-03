@@ -1,6 +1,6 @@
 <?php
 
-use A1\Collection;
+use A1\Collection\Collection;
 
 class CollectionTest extends PHPUnit_Framework_TestCase{
 
@@ -38,8 +38,8 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 		$collection->set('key1','key2','test');
 		$this->assertEquals($collection->get('key1','key2'),'test');
 		
-		$this->setExpectedException(\InvalidArgumentException::class);
 		$collection->set('reset');
+		$this->assertEquals($collection->all(),['reset']);
 	}
 	
 	/**
@@ -159,14 +159,14 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 		$this->assertEquals($collection->count('level1','level2'),1);
 
 		//invalid count
-		$this->setExpectedException(\DomainException::class);
+		$this->setExpectedException(\InvalidArgumentException::class);
 		$collection->count('invalid','key','path');
 	}
 
 	/**
 	 * 
 	 */
-	public function testCountDepth(){
+	public function testDepth(){
 		$collection = new Collection($this->collection);
 		$this->assertEquals($collection->depth(),2);
 	}
@@ -247,6 +247,85 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 	
 		$this->setExpectedException(\InvalidArgumentException::class);
 		$collection->pick('foo');
+	}
+
+	/**
+	 * 
+	 */
+	public function testBoundary(){
+		$collection = new Collection($this->collection);
+
+		$this->assertEquals($collection->first() ,'bar');
+		$this->assertEquals($collection->first(true) ,'foo');
+		$this->assertEquals($collection->last() ,[
+			'level2' => [
+				'level3' => 'value'
+			]
+		]);
+		$this->assertEquals($collection->last(true) ,'level1');
+
+	}
+
+	/**
+	 * 
+	 */
+	public function testIterator(){
+		$collection = new Collection($this->collection);
+		foreach($collection as $item){}
+	}
+
+	/**
+	 * 
+	 */
+	public function testStack(){
+		$collection = new Collection($this->collection);
+
+		$collection->push('test');
+		$this->assertEquals( $collection->all() ,[
+			'foo' => 'bar',
+			'123' => 456,
+			'level1' => [
+				'level2' => [
+					'level3' => 'value'
+				]
+			],
+			124 => 'test'
+		]);
+
+
+		$this->assertEquals( $collection->pull('level1') ,[
+			'level2' => [
+				'level3' => 'value'
+			]
+		]);
+		$this->assertEquals( $collection->all(), [
+			'foo' => 'bar',
+			'123' => 456,
+			124 => 'test'
+		]);
+
+		$collection->throne('king', 'role');
+		$this->assertEquals( $collection->all(), [
+			'role' => 'king',
+			'foo' => 'bar',
+			'123' => 456,
+			124 => 'test'
+		]);
+
+		$this->assertEquals( $collection->shift(), 'king');
+
+		$pop = $collection->pop();
+		$this->assertEquals( $collection->all(), [
+			'foo' => 'bar',
+			'123' => 456
+		]);
+		$this->assertEquals( $pop, 'test');
+
+		$collection->airy();
+		$this->assertEquals( $collection->all(), [
+			'foo' => 'bar',
+			'0' => 456
+		]);
 	}
 
 

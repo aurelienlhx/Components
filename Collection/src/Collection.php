@@ -1,12 +1,13 @@
 <?php
 
-namespace A1;
+namespace A1\Collection;
 
-use \ArrayAccess;
-use DomainException;
+use Iterator;
+use Countable;
+use ArrayAccess;
 use InvalidArgumentException;
 
-class Collection implements ArrayAccess{
+class Collection implements ArrayAccess, Iterator, Countable{
 
 	/**
 	 * Collection to handle
@@ -24,13 +25,20 @@ class Collection implements ArrayAccess{
 	 * Collection constructor
 	 *
 	 * @param mixed array|object $collection
+	 *
+	 * @return void
 	 */
 	public function __construct(array $collection = array()){
 		$this->set($collection);
 	}
 
 	/**
-	 * Implementation of ArrayAccess interface
+	 * Check if a key exists
+	 * @interface ArrayAccess
+	 *
+	 * @param $offset
+	 *
+	 * @return bool
 	 */
 	public function offsetExists($offset){
 		return $this->has($offset);
@@ -38,24 +46,134 @@ class Collection implements ArrayAccess{
 
 	
 	/**
-	 * 	Implementation of ArrayAccess interface
+	 * Retrieve a value with a key
+	 * @interface ArrayAccess
+	 *
+	 * @param mixed $offset
+	 *
+	 * @return mixed
 	 */
 	public function offsetGet($offset) {
 		return $this->get($offset);
     }
 
 	/**
-	 * 	Implementation of ArrayAccess interface
+	 * Set a value with a key
+	 * @interface ArrayAccess
+	 *
+	 * @param mixed $offset
+	 *
+	 * @return void
 	 */
 	public function offsetSet($offset, $value){
 		$this->set($offset, $value);
 	}
 
 	/**
-	 * 	Implementation of ArrayAccess interface
+	 * Delete a key and his value
+	 * @interface ArrayAccess
+	 *
+	 * @param mixed $offset
+	 *
+	 * @return void
 	 */
 	public function offsetUnset($offset){
 		$this->delete($offset);
+	}
+
+	/**
+	 * Get the first element of the collection
+	 *
+	 * @param bool $key Return key insteadof value
+	 *
+	 * @return mixed
+	 */
+	public function first( $key = false){
+		$collection = $this->collection;
+
+		if($key){
+			reset($collection);
+			return key($collection);
+		}
+		else
+			return reset($collection);
+	}
+
+	/**
+	 * Get the last element of the collection
+	 *
+	 * @param bool $key Return key insteadof value
+	 *
+	 * @return mixed
+	 */
+	public function last( $key = false ){
+		$collection = $this->collection;
+
+		if($key){
+			end($collection);
+			return key($collection);
+		}
+		else
+			return end($collection);
+	}
+
+	/**
+	 * Get the previous element of the collection
+	 *
+	 * @return mixed
+	 */
+	public function previous(){
+		return prev($this->collection);
+	}
+
+	/**
+	 * Get the current element of the collection
+	 * @interface Iterator
+	 *
+	 * @return mixed
+	 */
+	public function current(){
+		return current($this->collection);
+	}
+
+	/**
+	 * Get the next element of the collection
+	 * @interface Iterator
+	 *
+	 * @return mixed
+	 */
+	public function next(){
+		return next($this->collection);
+	}
+
+	/**
+	 * Get the key of the current element of the collection
+	 * @interface Iterator
+	 *
+	 * @return mixed
+	 */
+	public function key(){
+		return key($this->collection);
+	}
+
+	/**
+	 * Rewind to the first element of the collection
+	 * @interface Iterator
+	 *
+	 * @return mixed
+	 */
+	public function rewind(){
+		reset($this->collection);
+	}
+
+	/**
+	 * Check if current key is valid
+	 * @interface Iterator
+	 *
+	 * @return bool
+	 */
+	public function valid(){
+		return key($this->collection) !== null;
 	}
 
 	/**
@@ -75,6 +193,7 @@ class Collection implements ArrayAccess{
 	/**
 	 * Recursively set a value in the collection
 	 * If a key do not exists, it is automaticaly created
+	 * If one argument
 	 * Thanks to http://thereisamoduleforthat.com/content/dealing-deep-arrays-php
 	 *
 	 * @param string $key[n] Keys path
@@ -101,7 +220,7 @@ class Collection implements ArrayAccess{
 
 		if(1 === $nargs){
 			if(!is_array($value) && !is_object($value))
-				throw new InvalidArgumentException('Single parameter must be an array as it replaces the collection fully');
+				$value = array($value);
 			$this->collection = (array) $value;
 		}
 		else
@@ -147,6 +266,13 @@ class Collection implements ArrayAccess{
 	}
 
 	/**
+	 * Alias of self::get()
+	 */
+	public function all(){
+		return $this->get();
+	}
+
+	/**
 	 * Get recursively a value or the given fallback value 
 	 *
 	 * @param string $key[n] Keys path
@@ -158,7 +284,7 @@ class Collection implements ArrayAccess{
 		$path = func_get_args();
 		
 		if(count($path)<2)
-			throw new InvalidArgumentException('At least 2 arguments (key and fallaback) expected');
+			throw new InvalidArgumentException('At least 2 arguments (key and fallback) expected');
 
 		$fallback = array_pop($path);
 		$value = call_user_func_array(array($this,'get'), $path);
@@ -204,6 +330,8 @@ class Collection implements ArrayAccess{
 	 * Check if the collection has a key and optionnaly a value // recusrive has
 	 *
 	 * @param string $key[n] Keys path
+	 *
+	 * @return bool
 	 */
 	public function has(/* $key1, $key2, ... */){
 		
@@ -225,6 +353,7 @@ class Collection implements ArrayAccess{
 
 	/**
 	 * Count the collection or a key level
+	 * @interface Countable
 	 *
 	 * @param string $key[n] Keys path
 	 *
@@ -238,7 +367,7 @@ class Collection implements ArrayAccess{
 			return count($this->collection);
 		
 		if(!call_user_func_array(array($this,'has'), $args))
-			throw new DomainException(sprintf('Impossible count, at least one key is undefined'));
+			throw new InvalidArgumentException(sprintf('Impossible to count, at least one key is undefined'));
 		
 		return count(call_user_func_array(array($this,'get'), $args));
 	}
@@ -249,6 +378,7 @@ class Collection implements ArrayAccess{
 	 * @param mixed array|object|Collection $collection 
 	 * @param bool $recursive
 	 *
+	 * @return void
 	 */
 	public function add( $collection , $recursive = false){
 
@@ -267,6 +397,126 @@ class Collection implements ArrayAccess{
 			$this->collection = array_replace_recursive($this->collection, $collection);
 		else
 			$this->collection = array_replace($this->collection, $collection);
+	}
+
+	/**
+	 * Throne a value to the beginning of the collection
+	 * Preserve numeric keys in contrary to array_unshift
+	 *
+	 * @param mixed $value
+	 * @param string $key
+	 *
+	 * @return void
+	 */
+	public function throne($value, $key = null){
+
+		if($this->frozen)
+			return;
+	
+		$reverse = array_reverse($this->collection, true);
+		if(null !== $key)
+			$reverse[$key] = $value;
+		else{
+			$reverse[] = $value;
+		}
+		$this->collection = array_reverse($reverse, true);
+		
+	}
+
+	/**
+	 * Push a value at the end of the collection
+	 *
+	 * @param mixed $value
+	 *
+	 * @return void
+	 */
+	public function push($value){
+
+		if($this->frozen)
+			return;
+
+		$this->collection[] = $value;
+	}
+
+	/**
+	 * Get the value of a key and remove it
+	 *
+	 * @param string $key
+	 *
+	 * @return mixed
+	 */
+	public function pull($key){
+
+		if($this->frozen)
+			return;
+
+		if(!isset($this->collection[$key]))
+			return;
+		
+		$value = $this->collection[$key];
+		unset($this->collection[$key]);
+		return $value;
+	}
+
+	/**
+     * Get and remove the first item from the collection.
+     * Preserve numeric keys in contrary to array_shift
+     *
+     * @param bool $getkey Retrieve the key insteadof the value
+     *
+     * @return mixed
+     */
+    public function shift($getkey = false)
+    {
+    	if($this->frozen)
+			return;
+
+        $collection = $this->collection;
+        $value = reset($collection);
+        $key = key($collection);
+        unset($this->collection[$key]);
+       
+        if($getkey)
+        	return $key;
+        else
+        	return $value;
+  
+    }
+
+	/**
+	 * Get the last value of the collection and remove it
+	 * Preserve numeric keys in contrary to array_pop
+	 *
+	 * @param bool $getkey Retrieve the key insteadof the value
+	 *
+	 * @return mixed
+	 */
+	public function pop($getkey = false){
+
+		if($this->frozen)
+			return;
+		
+		$collection = $this->collection;
+        $value = end($collection);
+        $key = key($collection);
+        unset($this->collection[$key]);
+        
+        if($getkey)
+        	return $key;
+        else
+        	return $value;
+	}
+
+	/**
+	 * Rewrite all numerical index from 0 and keep literal key
+	 *
+	 * @return void
+	 */
+	public function airy(){
+		if($this->frozen)
+			return;
+
+		$this->collection = array_merge([],$this->collection);
 	}
 
 	/**
@@ -299,14 +549,6 @@ class Collection implements ArrayAccess{
 	   return $max_depth;
 	}
 
-	/**
-	 * Return the array source
-	 *
-	 * @return array
-	 */
-	public function arrayfy(){
-		return $this->collection;
-	}
 
 	/**
 	 * Flatten all the collection on one level
@@ -354,7 +596,7 @@ class Collection implements ArrayAccess{
 	 * @param array $array
 	 * @param string $separator
 	 *
-	 * @return array
+	 * @return void
 	 */
 	public function inflate($separator = '.'){
 		
@@ -379,7 +621,33 @@ class Collection implements ArrayAccess{
 	    }
 
 	    $this->collection = $inflate;
-	    return $this;
+	}
+
+	/**
+	 * Execute a function throught the collection items
+	 *
+	 * @param $callback Expect 2 arguments by reference ($key,$value)
+	 *
+	 * @return bool
+	 */
+	public function walk(callable $callback, $recursive = false){
+		
+		if($this->frozen)
+			return;
+		
+		if($recursive)
+			return array_walk_recursive($this->collection, $callback);
+		else
+			return array_walk($this->collection,$callback);
+	}
+
+	/**
+	 * Return the array source
+	 *
+	 * @return array
+	 */
+	public function arrayfy(){
+		return $this->collection;
 	}
 
 	/**
@@ -406,7 +674,7 @@ class Collection implements ArrayAccess{
 				$value = get_object_vars($value);
 			}
 			else if(is_array($value))
-				$value = $this->__flatten($value);
+				$value = $this->__stringify($value);
 		}
 		return $array;
 	}
@@ -419,6 +687,15 @@ class Collection implements ArrayAccess{
 	 */
 	public function __toString(){
 		return $this->stringify();
+	}
+
+	/**
+	 * Serialiaze the collection
+	 *
+	 * @return string
+	 */
+	public function serialize(){
+		return serialize($this->collection);
 	}
 
 }
