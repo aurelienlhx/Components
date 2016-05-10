@@ -328,5 +328,34 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 		]);
 	}
 
+	/**
+	 * 
+	 */
+	public function testEach(){
+		
+		$collection = new Collection($this->collection);
+		
+		$collection->each(function(&$value,$key,$collection){
+			$value = 'test';
+		});
+		
+		$this->assertEquals( $collection->all(), [
+			'foo' => 'test',
+			'123' => 'test',
+			'level1' => 'test'
+		]);
+
+		$collection->each(function($value,$key,$collection){
+			$collection->set($key,'other');
+		});
+
+		$this->assertEquals( $collection->all(), [
+			'foo' => 'other',
+			'123' => 'other',
+			'level1' => 'other'
+		]);
+
+	}
+
 
 }

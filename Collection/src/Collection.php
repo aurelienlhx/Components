@@ -177,7 +177,21 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	}
 
 	/**
+	 * Loop on all the collection items
+	 *
+	 * @param Closure $callback
+	 *
+	 * @return void
+	 */
+	public function each( Callable $callback){
+		foreach($this->collection as $key => &$value)
+			$callback($value,$key,$this);
+	}
+
+	/**
 	 * Freeze the collection to prevent modification
+	 *
+	 * @return void
 	 */
 	public function freeze(){
 		$this->frozen = true;
@@ -185,6 +199,8 @@ class Collection implements ArrayAccess, Iterator, Countable{
 
 	/**
 	 * Unfreeze the collection 
+	 *
+	 * @return void
 	 */
 	public function unfreeze(){
 		$this->frozen = false;
@@ -199,6 +215,7 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	 * @param string $key[n] Keys path
 	 * @param mixed $value
 	 *
+	 * @return void
 	 */
 	public function set(/* $key1, $key2, ..., $value */){
 
@@ -300,6 +317,8 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	 *
 	 * @param string $key[n] Keys path
 	 * if empty params, reset the collection with empty array
+	 *
+	 * @return void
 	 */
 	public function delete(/* $key1, $key2, ...*/){
 
@@ -690,7 +709,7 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	}
 
 	/**
-	 * Serialiaze the collection
+	 * Serialize the collection
 	 *
 	 * @return string
 	 */
