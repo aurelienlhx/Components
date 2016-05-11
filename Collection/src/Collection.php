@@ -183,7 +183,7 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	 *
 	 * @return void
 	 */
-	public function each( Callable $callback){
+	public function each(Callable $callback){
 		foreach($this->collection as $key => &$value)
 			$callback($value,$key,$this);
 	}
@@ -287,6 +287,38 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	 */
 	public function all(){
 		return $this->get();
+	}
+
+	/**
+	 * Return only values acccording to the keys list
+	 *
+	 * @param string $key
+	 *
+	 * @return array 
+	 */
+	public function only($key /*, $key2, $key3, ...*/){
+		$only = [];
+		$keys = func_get_args();
+		foreach($keys as $k)
+			if(array_key_exists($k, $this->collection))
+				$only[$k] = $this->collection[$k];
+		return $only;
+	}
+
+	/**
+	 * Return all  values except it they are in the keys list
+	 *
+	 * @param string $key
+	 *
+	 * @return array  
+	 */
+	public function except($key /*, $key2, $key3, ...*/){
+		$except = [];
+		$keys = func_get_args();
+		foreach($this->collection as $k => $v)
+			if(!in_array($k,$keys))
+				$except[$k] = $v;
+		return $except;
 	}
 
 	/**
@@ -645,11 +677,11 @@ class Collection implements ArrayAccess, Iterator, Countable{
 	/**
 	 * Execute a function throught the collection items
 	 *
-	 * @param $callback Expect 2 arguments by reference ($key,$value)
+	 * @param $callback Expect 2 arguments by reference ($value,$key)
 	 *
 	 * @return bool
 	 */
-	public function walk(callable $callback, $recursive = false){
+	public function walk(Callable $callback, $recursive = false){
 		
 		if($this->frozen)
 			return;

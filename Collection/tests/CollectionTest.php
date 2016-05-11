@@ -357,5 +357,22 @@ class CollectionTest extends PHPUnit_Framework_TestCase{
 
 	}
 
+	/**
+	 * 
+	 */
+	public function testExceptAndOnly(){
+		$collection = new Collection($this->collection);
+		$only = $collection->only('foo','123');
+		$this->assertEquals($only,[
+			'foo'=>'bar',
+			'123'=>456
+		]);
+		$except = $collection->except('level1');
+		$this->assertEquals($except,[
+			'foo'=>'bar',
+			'123'=>456
+		]);
+	}
+
 
 }
