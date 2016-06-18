@@ -272,8 +272,9 @@ class Route implements RouteInterface{
 					//else check if a value parameter is set in params array
 					else if(isset($this->params[$name]))
 						$value = $this->params[$name];
+					//else accept all chars with a greedy quantifier
 					else
-						throw new DomainException(sprintf('Missing value for parameter %s',$name));
+						$value = '.*?';
 
 					$regex = str_replace($match[0], '(?P<'.$name.'>'.$value.')', $subject);
 					$i++;
@@ -318,7 +319,9 @@ class Route implements RouteInterface{
 				foreach($matches as $key=>$val)
 					if(is_numeric($key)) unset($matches[$key]);
 				
-				$values = $this->values($matches)->getValues();
+				if(!is_array($values))
+					$values = array();
+				$values = array_merge($values,$this->values($matches)->getValues());
 
 				$matched = true;
 				break;
