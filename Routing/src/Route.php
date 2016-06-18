@@ -2,14 +2,17 @@
 
 namespace A1\Routing;
 
-class Route {
+use DomainException;
+use InvalidArgumentException;
+
+class Route implements RouteInterface{
 	
 	/**
 	 * Key of the route that will allow to retrieves the route
 	 * 
 	 * @var string $key
 	 */
-	private $key;
+	private $name;
 	
 	/**
 	 * Patterns used by the route.
@@ -21,14 +24,22 @@ class Route {
 	 *
 	 * @var array $patterns
 	 */
-	private $patterns = array();
+	private $patterns = [];
 
 	/**
-	 * Array of parameters from the url or alones
+	 * Array of parameters regex which match in the route
 	 *
 	 * @var array $params
 	 */
-	private $params = array();
+	private $params = [];
+
+	/**
+	 * An array of values found in the pattern route with the params regex
+	 * Can contains dynamic (from params) or static values
+	 *
+	 * @var array $params
+	 */
+	private $values = [];
 	
 
 	/**
@@ -37,64 +48,201 @@ class Route {
 	 *
 	 * @var array $attributes
 	 */
-	private $attributes = array();
+	private $attributes = [];
 
 
 	/**
-	 * Array of regrex transformed from sel::$patterns
+	 * Array of regrex created from self::$patterns
 	 * 
 	 * @var array $regex
 	 */
-	private $regexs = array();
+	private $regexs = [];
+
+	/**
+	 *  Array of custom conditions to add for match the route
+	 *
+	 * @var array
+	 */
+	private $conditions = [];
 
 	
 	/**
 	 * Construct a route.
 	 *
-	 * @param array $route A route representation 
-	 * or 
-	 * @param string $key Route key
+	 * @param string $name Route name
 	 * @param mixed $pattern A string pattern or array of string pattern
-	 * @param array $params Array of parameters and their value to used in pattern
 	 *
+	 * @return void
 	 */
-	public function __construct( /* $route | [$key, $patterns, array $params = null] */ ){
-		
-		$args = func_get_args();
-		$nargs = count($args);
+	public function __construct( $patterns ){
 
-		if(1 === $nargs){
-			if(!is_array($args[0]))
-				throw new \InvalidArgumentException('Array expected with only one argument');
-			$this->hydrate($args[0]);
-		}else if (2 <= $nargs && 3 >= $nargs){			
-			$this->key($args[0]);
-			$this->patterns($args[1]);
-			
-			if(isset($args[2])){
-				if(!is_array($args[2]))
-					throw new \InvalidArgumentException('Array expected for $params argument');
-				$this->params($args[2]);	
-			}
-		}
-		else
-			throw new \InvalidArgumentException('1,2 or 3 arguments expected');
+		$this->patterns($patterns);
+	}
+
+	/**
+	 * Create a route from an array representation
+	 *
+	 * @param array $array
+	 *
+	 * @return Route
+	 */
+	public static function createFromArray(array $array){
+		$route = new static($array['patterns']);
+		
+		if(isset($array['name']))
+			$route->name($array['name']);
+		if(isset($array['params']))
+			$route->params($array['params']);
+		if(isset($array['values']))
+			$route->values($array['values']);
+		if(isset($array['conditions']))
+			$route->conditions($array['conditions']);
+		if(isset($array['attributes']))
+			$route->attributes($array['attributes']);
+
+		return $route;
+	}
+
+
+	/**
+	 * Set or get the route key
+	 *
+	 * @param mixed $val
+	 * 
+	 * @return mixed
+	 */
+	public function name( $name ){
+		
+		$this->name = (string) $name;
+		return $this;
 	}
 
 	/**
 	 * 
 	 */
-	private function hydrate(array $route){
-		foreach($route as $k => $v){
-			if(method_exists($this,$k))
-				call_user_func(array($this,$k),$v);
-			else
-				throw new \DomainException(sprintf('"%s" key not expected in route array',$k));
-		}
+	public function getName( $name=null ){
+		
+		return $this->name;
+	}
+
+
+	/**
+	 * Set the route's patterns
+	 */
+	public function patterns( $patterns ){
+
+		if(!is_array($patterns))
+			$patterns = array($patterns);
+
+		$this->patterns = $patterns;
+		return $this;
+	}
+
+
+	/**
+	 * Set an array of parameters
+	 */
+	public function params( array $params ){
+		
+		$this->params = array_merge($this->params,$params);
+		return $this;
 	}
 
 	/**
-	 * Init the current route formatting the regex according to the pattern route
+	 * 
+	 */
+	public function getParams(){
+		return $this->params;
+	}
+
+	/**
+	 * Set an array of values
+	 */
+	public function values( array $values ){
+		
+		$this->values = array_merge($this->values,$values);
+		return $this;
+	}
+
+	/**
+	 * Get a value
+	 */
+	public function getValue( $key ){
+		return isset($this->values[$key])? $this->values[$key] : null;
+	}
+
+	/**
+	 * Get all values
+	 */
+	public function getValues(){
+		return $this->values;
+	}
+	
+	/**
+	 * Set an array of attributes
+	 */
+	public function attributes( array $attributes ){
+		$this->attributes = $attributes;
+		return $this;
+	}
+
+	/**
+	 * Get an attribute
+	 *
+	 * @param string $name
+	 *
+	 * @return mixed
+	 */
+	public function getAttributes($name = null){
+		if(null === $name)
+			return $this->attributes;
+		if(isset($this->attributes[$name]))
+			return $this->attributes[$name];
+	}
+
+	/**
+	 * Check if an attribute exists, optionnaly check his value too
+	 * 
+	 * @param string $name Name of the attribute
+	 * @param mixed $value Value of the attribute 
+	 *
+	 * @return bool
+	 */
+	public function hasAttribute($name,$value = null){
+		if(!isset($this->attributes[$name]))
+			return false;
+		
+		if(null === $value || (null !== $value && $this->attributes[$name] === $value))
+			return true;
+		else
+			return false;
+	}
+
+	/**
+	 * Set a condition or an array of conditions
+	 *
+	 * @param mixed $conditions
+	 *
+	 * @return void
+	 */
+	public function conditions( $conditions ){
+		
+		if(!is_array($conditions))
+			$conditions = array($conditions);
+		
+		foreach($conditions as $condition)
+			if(!is_callable($condition))
+				throw new InvalidArgumentException('Contitions must be a callable or an array of callable');
+		
+		$this->conditions = array_merge($this->conditions,$conditions);
+		return $this;
+	}
+
+
+	/**
+	 * Formatting the route's regex according to the pattern route
+	 *
+	 * @return void
 	 */
 	private function formatRegexs(){
 		$patterns = $this->patterns;
@@ -117,7 +265,16 @@ class Route {
 						$subject = $regex;
 
 					$name = preg_quote($match[1]);
-					$value = isset($match[2])? $match[2] : (isset($this->params[$name])? $this->params[$name] : '.+');
+					
+					//check if a value is set with the regex parameter
+					if(isset($match[2]))
+						$value = $match[2];
+					//else check if a value parameter is set in params array
+					else if(isset($this->params[$name]))
+						$value = $this->params[$name];
+					else
+						throw new DomainException(sprintf('Missing value for parameter %s',$name));
+
 					$regex = str_replace($match[0], '(?P<'.$name.'>'.$value.')', $subject);
 					$i++;
 				}
@@ -131,94 +288,28 @@ class Route {
 		$this->regexs = $regexs;
 	}
 
-	/**
-	 * Set or get the route key
-	 */
-	public function key( $val=null ){
-		if(null === $val)
-			return $this->key;
-		else
-			$this->key = (string) $val;
-	}
-
-
-	/**
-	 * Set or get the route's patterns
-	 */
-	public function patterns( /*$patterns*/ ){
-		$args = func_get_args();
-		$nargs = count($args);
-		if(0 === $nargs)
-			if(1 === count($this->patterns))
-				return reset($this->patterns);
-			else
-				return $this->patterns;
-		else{
-			if(!is_array($args[0]))
-				$args[0] = array($args[0]);
-			$this->patterns = array_merge($this->patterns,$args[0]);
-			$this->formatRegexs();
-		}
-	}
-
-
-	/**
-	 * Set or get the route's params
-	 */
-	public function params(/*$params*/){
-		$args = func_get_args();
-		$nargs = count($args);
-		if(0 === $nargs)
-			return $this->params;
-		else if(1 === $nargs){
-			if(is_array($args[0]))
-				$this->params = array_merge($this->params,$args[0]);
-			else
-				return isset($this->params[$args[0]])? $this->params[$args[0]] : null;
-		}
-		else
-			$this->params[$args[0]] = (string) $args[1];
-	}
-
-	
-	/**
-	 * Set or get route's attributes
-	 */
-	public function attributes(/*$attributes*/){
-		$args = func_get_args();
-		$nargs = count($args);
-		if(0 === $nargs)
-			return $this->attributes;
-		else if(1 === $nargs){
-			if(is_array($args[0]))
-				$this->attributes = array_merge($this->attributes,$args[0]);
-			else
-				return isset($this->attributes[$args[0]])? $this->attributes[$args[0]] : null;
-		}
-		else
-			$this->attributes[$args[0]] = (string) $args[1];
-	}
-
 
 	/**
 	 * Match a path
 	 *
 	 * @param string $path Path to test with route regex
-	 * @param string $attributes Array of attributes to test in addition of the path
 	 * @param array &$params Array of params in case of the route path match the regex
 	 *
 	 * @return bool
 	 */
-	public function match($path, array $attributes = null, &$params = null ){
-		
-		$has_matched = false;
+	public function match($path, &$values = [] ){
+		//format regex just before matching cause 
+		//params can be set anytime
+		$this->formatRegexs();
+
+		$matched = false;
 		foreach($this->regexs as $regex){
 			if(preg_match($regex,$path,$matches)){
 				//check attributes
-				if(!empty($attributes)){
-					foreach($attributes as $key => $val)
-						//if at least one attribute is not in the matched route so do not match
-						if(!$this->hasAttribute($key,$val)){
+				if(!empty($this->conditions)){
+					foreach($this->conditions as $condition)
+						//if a condition return false
+						if(!!!call_user_func($condition, $this)){
 							break 2;
 						}
 				}
@@ -227,51 +318,13 @@ class Route {
 				foreach($matches as $key=>$val)
 					if(is_numeric($key)) unset($matches[$key]);
 				
-				$params = array_merge($this->params,$matches);
-				$has_matched = true;
+				$values = $this->values($matches)->getValues();
+
+				$matched = true;
 				break;
 			}
 		}
-		return $has_matched;
-	}
-
-	/**
-	 * Check if an attribute exists, optionnaly check his value too
-	 * 
-	 * @param string $name Name of the attribute
-	 * @param mixed $value Value of the attribute 
-	 *
-	 * @return bool
-	 */
-	public function hasAttribute($name,$value = null){
-		if(!isset($this->attributes[$name]))
-			return false;
-		
-		if(null === $value || (null !== $value && $this->attributes[$name] === $value))
-			return true;
-		else
-			return false;
-	}
-
-	/**
-	 * Check if an attribute has a value or if contain the value in case of array
-	 * 
-	 * @param string $name Name of the attribute
-	 * @param mixed $value Value to search into attribute value
-	 *
-	 * @return bool
-	 */
-	public function inAttribute($name,$value){
-		if(!isset($this->attributes[$name]))
-			return false;
-
-		if(is_array($this->attributes[$name]) && in_array($value,$this->attributes[$name]))
-			return true;
-		
-		if($this->attributes === $value)
-			return true;
-
-		return false;
+		return $matched;
 	}
 
 }
