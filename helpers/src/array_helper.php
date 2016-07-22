@@ -264,4 +264,17 @@ if(!function_exists('array_inflate')){
 }
 
 
-//@todo array_of_array
+if(!function_exists('array_of_array')){
+    /**
+     * Check if an array contain only array
+     *
+     * @param $array1
+     *
+     */
+    function array_of_array(array $array){
+        foreach($array as $arr)
+            if(!is_array($arr))
+                return false;
+        return true;
+    }
+}
