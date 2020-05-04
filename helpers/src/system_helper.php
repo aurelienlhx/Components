@@ -146,3 +146,22 @@ if( !function_exists('check')){
 			return ($var === $value);
 	}
 }
+
+if( !function_exists('get')){
+	/**
+	 * Get a value or return a fallback
+	 *
+	 * @param $var
+	 * @param $fallback
+	 *
+	 * @return value or fallback
+	 */
+	function get(&$var, $fallback = null, $empty=false){
+
+		if(func_num_args() >= 2 && ($var === null || ($empty && empty($var)))){
+			return $fallback;
+		}
+
+		return $var;
+	}
+}
