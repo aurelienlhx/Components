@@ -1,6 +1,6 @@
 <?php
 
-if ( !function_exists('silent_require')){
+if ( !function_exists('embed')){
 	/**
 	 * Use a specific private scope for each require so variable are not availables in global scope
 	 * 
@@ -8,7 +8,7 @@ if ( !function_exists('silent_require')){
 	 * @param array $params Parameters array
 	 *
 	 */
-	function silent_require($file,$params = array()){
+	function embed($file,$params = array()){
 		
 		if(!is_file($file))
 			throw new InvalidArgumentException(sprintf('File do not exists at %s'),$file);
@@ -141,7 +141,7 @@ if( !function_exists('check')){
 	 */
 	function check( &$var, $value = null){
 		if(1 == func_num_args())
-			return ($var !== null);
+			return !empty($var);
 		else
 			return ($var === $value);
 	}
